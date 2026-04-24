@@ -1,0 +1,100 @@
+/**
+ * Copyright (C) 2024 la_rrp
+ *
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the Academic Free License (AFL 3.0)
+ * that is bundled with this package in the file LICENSE.md.
+ * It is also available through the world-wide-web at this URL:
+ * https://opensource.org/licenses/AFL-3.0
+ *
+ * @author    la_rrp
+ * @copyright 2024 la_rrp
+ * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License (AFL 3.0)
+ */
+
+/* ── Wrapper ────────────────────────────────────────────────────────────────── */
+.la-rrp-block {
+    margin-top: 8px;
+    font-size: 14px;
+}
+
+/* ── Recommended price row ──────────────────────────────────────────────────── */
+.product-uvp {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    color: #777;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+.product-uvp__label {
+    font-weight: 400;
+}
+
+.product-uvp__value {
+    font-weight: 500;
+    text-decoration: line-through;
+}
+
+/* ── Savings row ────────────────────────────────────────────────────────────── */
+.la-rrp-discount {
+    color: #c0392b;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+.la-rrp-discount strong {
+    font-weight: 700;
+}
+
+/* ── Price guarantee badge ──────────────────────────────────────────────────── */
+.price-badge.guarantee {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #2ecc71;
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin-top: 8px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s ease;
+}
+
+.price-badge.guarantee:hover,
+.price-badge.guarantee:focus {
+    background: #27ae60;
+    outline: none;
+}
+
+/* ── Tooltip (hidden by default, shown on hover / focus / JS toggle) ─────────── */
+.price-guarantee-tooltip {
+    display: none;
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #555;
+    background: #f6f6f6;
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    border-radius: 4px;
+    max-width: 420px;
+}
+
+.price-badge.guarantee:hover + .price-guarantee-tooltip,
+.price-badge.guarantee:focus + .price-guarantee-tooltip,
+.price-guarantee-tooltip.is-visible {
+    display: block;
+}
+
+/* ── Mobile: always show tooltip ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .price-guarantee-tooltip {
+        display: block;
+    }
+}

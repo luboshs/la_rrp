@@ -1,0 +1,12 @@
+{
+    "name": "la_rrp/la_rrp",
+    "description": "PrestaShop 8.1 UVP / Recommended Retail Price module",
+    "license": "AFL-3.0",
+    "type": "prestashop-module",
+    "require-dev": {
+        "phpunit/phpunit": "^10"
+    },
+    "config": {
+        "allow-plugins": {}
+    }
+}

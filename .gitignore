@@ -1,0 +1,27 @@
+# Copyright (C) 2024 la_rrp
+# License: AFL 3.0 – https://opensource.org/licenses/AFL-3.0
+
+# Dependencies / build artefacts
+/vendor/
+/node_modules/
+/composer.lock
+
+# PHPUnit cache
+/.phpunit.cache/
+/.phpunit.result.cache
+
+# Editor / OS artefacts
+.DS_Store
+Thumbs.db
+*.log
+*.bak
+*.swp
+*.tmp
+
+# IDE
+/.idea/
+/.vscode/
+*.iml
+
+# Zip packages
+*.zip
