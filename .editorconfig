@@ -1,0 +1,21 @@
+# Copyright (C) 2024 la_rrp
+# License: AFL 3.0 – https://opensource.org/licenses/AFL-3.0
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{tpl,html}]
+indent_size = 2
+
+[*.{yml,yaml,json}]
+indent_size = 2
+
+[Makefile]
+indent_style = tab

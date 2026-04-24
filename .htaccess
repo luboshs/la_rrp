@@ -1,0 +1,11 @@
+# Copyright (C) 2024 la_rrp
+# License: AFL 3.0 – https://opensource.org/licenses/AFL-3.0
+
+# Block direct browser access to all PHP files in this module
+<FilesMatch "\.php$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Disable directory listing
+Options -Indexes

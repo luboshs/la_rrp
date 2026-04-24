@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<!--
+  Copyright (C) 2024 la_rrp
+  License: AFL 3.0 - https://opensource.org/licenses/AFL-3.0
+-->
+<ruleset name="la_rrp">
+    <description>PHP CodeSniffer rules for the la_rrp module.</description>
+
+    <file>la_rrp.php</file>
+    <file>tests</file>
+
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+
+    <!-- PSR-12 base standard -->
+    <rule ref="PSR12"/>
+
+    <!-- Require type declarations -->
+    <rule ref="SlevomatCodingStandard.TypeHints.ReturnTypeHint"/>
+    <rule ref="SlevomatCodingStandard.TypeHints.ParameterTypeHint"/>
+
+    <!-- No unused use statements -->
+    <rule ref="SlevomatCodingStandard.Namespaces.UnusedUses"/>
+</ruleset>
