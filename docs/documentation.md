@@ -128,3 +128,97 @@ function upgrade_module_1_0_1($object): bool
 
 Unit tests cover the core calculation logic and do not require a live
 PrestaShop installation.
+
+---
+
+## Template Developer Guide
+
+### Product detail page (`displayProductPriceBlock`)
+
+The module renders its own template
+`views/templates/front/displayProductPriceBlock.tpl` and assigns the
+following Smarty variables:
+
+| Variable | Type | Description |
+|---|---|---|
+| `$la_rrp_uvp` | `float` | Raw UVP value. `0` when not set. |
+| `$la_rrp_uvp_formatted` | `string` | UVP formatted with `number_format` (e.g. `49,90`). |
+| `$la_rrp_currency_sign` | `string` | Currency sign for the active currency (e.g. `€`). |
+| `$la_rrp_is_cheaper` | `bool` | `true` when `current_price < uvp`. |
+| `$la_rrp_discount_formatted` | `string` | Savings amount formatted (e.g. `10,00`). Empty when not cheaper. |
+| `$la_rrp_discount_percent` | `int` | Savings percentage (e.g. `20`). `0` when not cheaper. |
+| `$la_rrp_show_guarantee` | `bool` | `true` when the guarantee badge is enabled in config. |
+
+#### Minimal example
+
+```smarty
+{if $la_rrp_uvp > 0}
+  <p>UVP: {$la_rrp_uvp_formatted|escape:'htmlall':'UTF-8'} {$la_rrp_currency_sign|escape:'htmlall':'UTF-8'}</p>
+
+  {if $la_rrp_is_cheaper}
+    <p>Ušetríte: {$la_rrp_discount_formatted|escape:'htmlall':'UTF-8'} {$la_rrp_currency_sign|escape:'htmlall':'UTF-8'} ({$la_rrp_discount_percent|escape:'htmlall':'UTF-8'} %)</p>
+  {elseif $la_rrp_show_guarantee}
+    <span class="guarantee-badge">&#10004; Garancia ceny</span>
+  {/if}
+{/if}
+```
+
+---
+
+### Product listing pages (`actionPresentProductListing`)
+
+For every product in a listing (category, search, homepage featured
+products, manufacturer page) the module automatically injects two extra
+keys into the `$product` array. **No module call from the template is
+needed.**
+
+| Key | Type | Description |
+|---|---|---|
+| `$product.uvp` | `float` | Raw UVP value. `0.0` when not set. |
+| `$product.uvp_formatted` | `string` | UVP formatted with `Tools::displayPrice()` (e.g. `49,90 €`). Empty string when not set. |
+
+#### Usage in a listing template
+
+```smarty
+{* Show UVP price *}
+{if !empty($product.uvp) && $product.uvp > 0}
+  <span class="product-uvp">UVP: {$product.uvp_formatted}</span>
+{/if}
+
+{* Show savings *}
+{if !empty($product.uvp) && $product.uvp > $product.price_amount}
+  <span class="product-savings">
+    Ušetríte: {($product.uvp - $product.price_amount)|string_format:"%.2f"} €
+  </span>
+{/if}
+```
+
+> **Note:** Do **not** call `{$la_rrp_module->getProductUvp($product.id_product)}` from a
+> listing template – it triggers a separate SQL query for every product.
+> The injected `$product.uvp` key is always available and uses a single
+> bulk query with an in-memory cache.
+
+#### Which listing contexts are covered
+
+| Context | Available |
+|---|---|
+| Category page | ✅ |
+| Search results | ✅ |
+| Homepage featured products | ✅ |
+| Manufacturer / supplier page | ✅ |
+| Product detail page | ⚠️ Use `$la_rrp_uvp` from `displayProductPriceBlock` instead |
+
+---
+
+### Debug helper
+
+Add this anywhere in your template to inspect all available UVP values
+for a product in a listing:
+
+```smarty
+{* Remove before going live *}
+<pre>
+uvp            = {$product.uvp}
+uvp_formatted  = {$product.uvp_formatted}
+</pre>
+```
