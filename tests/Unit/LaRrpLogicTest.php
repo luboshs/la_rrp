@@ -186,4 +186,76 @@ class LaRrpLogicTest extends TestCase
     {
         $this->assertTrue($this->isCheaper(80.0, 100.0));
     }
+
+    // -------------------------------------------------------------------------
+    // Test: getProductUvps bulk-loading helper logic
+    // -------------------------------------------------------------------------
+
+    /**
+     * Mirrors the input-sanitisation logic from La_rrp::getProductUvps().
+     *
+     * @param int[] $productIds
+     *
+     * @return int[]
+     */
+    private function sanitizeProductIds(array $productIds): array
+    {
+        $ids = array_filter(array_map('intval', array_unique($productIds)), fn ($id) => $id > 0);
+        return array_values($ids);
+    }
+
+    public function testSanitizeProductIdsFiltersZeroAndNegative(): void
+    {
+        $result = $this->sanitizeProductIds([0, -1, 5, 10]);
+        $this->assertSame([5, 10], $result);
+    }
+
+    public function testSanitizeProductIdsDeduplicates(): void
+    {
+        $result = $this->sanitizeProductIds([3, 3, 7, 7]);
+        $this->assertSame([3, 7], $result);
+    }
+
+    public function testSanitizeEmptyArrayReturnsEmpty(): void
+    {
+        $this->assertSame([], $this->sanitizeProductIds([]));
+    }
+
+    public function testSanitizeAllInvalidReturnsEmpty(): void
+    {
+        $this->assertSame([], $this->sanitizeProductIds([0, -5, -100]));
+    }
+
+    // -------------------------------------------------------------------------
+    // Test: hookActionPresentProductListing behaviour without DB
+    // -------------------------------------------------------------------------
+
+    /**
+     * Simulates what the hook does: merges uvp/uvp_formatted into product data.
+     *
+     * @param array<string,mixed> $presentedProduct
+     */
+    private function applyUvpToProduct(array &$presentedProduct, float $uvp): void
+    {
+        $presentedProduct['uvp'] = $uvp;
+        $presentedProduct['uvp_formatted'] = $uvp > 0 ? number_format($uvp, 2, ',', ' ') . ' €' : '';
+    }
+
+    public function testHookAddsUvpToProduct(): void
+    {
+        $product = ['id_product' => 42, 'name' => 'Test'];
+        $this->applyUvpToProduct($product, 99.90);
+
+        $this->assertSame(99.90, $product['uvp']);
+        $this->assertNotEmpty($product['uvp_formatted']);
+    }
+
+    public function testHookSetsZeroUvpAndEmptyFormattedWhenNoUvp(): void
+    {
+        $product = ['id_product' => 42, 'name' => 'Test'];
+        $this->applyUvpToProduct($product, 0.0);
+
+        $this->assertSame(0.0, $product['uvp']);
+        $this->assertSame('', $product['uvp_formatted']);
+    }
 }

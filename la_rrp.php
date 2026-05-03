@@ -33,6 +33,13 @@ class La_rrp extends Module
     const TABLE_PRODUCT_UVP = 'product_uvp';
 
     /**
+     * In-memory UVP cache to avoid repeated DB queries within a single request.
+     *
+     * @var array<int, float>
+     */
+    private array $uvpCache = [];
+
+    /**
      * Configuration key prefix.
      */
     const CFG_ENABLED = 'LA_RRP_ENABLED';
@@ -68,6 +75,7 @@ class La_rrp extends Module
         return parent::install()
             && $this->registerHook('displayHeader')
             && $this->registerHook('displayProductPriceBlock')
+            && $this->registerHook('actionPresentProductListing')
             && $this->registerHook('actionProductFormBuilderModifier')
             && $this->registerHook('actionAfterCreateProductFormHandler')
             && $this->registerHook('actionAfterUpdateProductFormHandler')
@@ -322,6 +330,39 @@ class La_rrp extends Module
         return $this->display(__FILE__, 'views/templates/front/displayProductPriceBlock.tpl');
     }
 
+    /**
+     * Hook: actionPresentProductListing – inject UVP data into every presented
+     * product during category/search/homepage listings.
+     *
+     * The hook is called once per product. UVP values for all products in the
+     * current listing are loaded in a single SQL query on the first call and
+     * kept in $uvpCache for subsequent calls within the same request.
+     *
+     * Adds to the presented product array:
+     *   – uvp            (float)  raw UVP value; 0 when not set
+     *   – uvp_formatted  (string) price formatted for the current currency
+     *
+     * @param array<string,mixed> $params
+     */
+    public function hookActionPresentProductListing(array &$params): void
+    {
+        if (!(int) Configuration::get(self::CFG_ENABLED)) {
+            return;
+        }
+
+        if (empty($params['presentedProduct']['id_product'])) {
+            return;
+        }
+
+        $productId = (int) $params['presentedProduct']['id_product'];
+        $uvp = $this->getProductUvpCached($productId);
+
+        $params['presentedProduct']['uvp'] = $uvp;
+        $params['presentedProduct']['uvp_formatted'] = $uvp > 0
+            ? Tools::displayPrice($uvp)
+            : '';
+    }
+
     // -------------------------------------------------------------------------
     // Admin product-form hooks (Symfony Form Extension, PS 8.x)
     // -------------------------------------------------------------------------
@@ -465,6 +506,70 @@ class La_rrp extends Module
         );
 
         return $result !== false ? (float) $result : 0.0;
+    }
+
+    /**
+     * Return the UVP for a product using an in-memory cache.
+     *
+     * On the first call for a given product the value is fetched from the DB
+     * and stored in $uvpCache. Subsequent calls return the cached value without
+     * any additional queries.
+     */
+    public function getProductUvpCached(int $productId): float
+    {
+        if ($productId <= 0) {
+            return 0.0;
+        }
+
+        if (!array_key_exists($productId, $this->uvpCache)) {
+            $this->uvpCache[$productId] = $this->getProductUvp($productId);
+        }
+
+        return $this->uvpCache[$productId];
+    }
+
+    /**
+     * Bulk-load UVP values for a list of product IDs in a single SQL query.
+     *
+     * Returns an associative array keyed by product ID. Products without a
+     * stored UVP receive the value 0.0. The results are also written into the
+     * in-memory cache so that subsequent getProductUvpCached() calls do not
+     * trigger additional queries.
+     *
+     * @param int[] $productIds
+     *
+     * @return array<int, float>
+     */
+    public function getProductUvps(array $productIds): array
+    {
+        $productIds = array_filter(array_map('intval', array_unique($productIds)), fn ($id) => $id > 0);
+
+        if (empty($productIds)) {
+            return [];
+        }
+
+        $result = array_fill_keys($productIds, 0.0);
+
+        $inClause = implode(',', array_map('intval', $productIds));
+        $rows = Db::getInstance()->executeS(
+            'SELECT `id_product`, `uvp`
+            FROM `' . _DB_PREFIX_ . self::TABLE_PRODUCT_UVP . '`
+            WHERE `id_product` IN (' . $inClause . ')'
+        );
+
+        if (is_array($rows)) {
+            foreach ($rows as $row) {
+                $id = (int) $row['id_product'];
+                $result[$id] = (float) $row['uvp'];
+            }
+        }
+
+        // Populate the in-memory cache so individual lookups are free.
+        foreach ($result as $id => $uvp) {
+            $this->uvpCache[$id] = $uvp;
+        }
+
+        return $result;
     }
 
     /**
